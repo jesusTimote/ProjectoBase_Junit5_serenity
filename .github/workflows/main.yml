@@ -31,37 +31,26 @@ jobs:
           java-version: '17'
           cache: 'maven'
 
-      - name: Install Google Chrome
+      - name: Install Chromium
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget gnupg
-          wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-          sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list'
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
-          google-chrome --version
+          sudo apt-get install -y chromium-browser
+          chromium-browser --version
 
       - name: Show inputs
         run: |
           echo "Ambiente: ${{ github.event.inputs.ambiente }}"
           echo "Tag de ejecución: ${{ github.event.inputs.tag_ejecucion }}"
 
-      # Ejecuta TODOS los escenarios si no se especifica tag
       - name: Run all scenarios
         if: ${{ github.event.inputs.tag_ejecucion == '' }}
         run: |
-          mvn clean verify \
-            -Dwebdriver.driver=chrome \
-            -Dchrome.switches="--headless,--disable-gpu,--no-sandbox,--disable-dev-shm-usage,--window-size=1920,1080"
+          mvn clean verify
 
-      # Ejecuta SOLO escenarios con tag si se especifica
       - name: Run scenarios with tag
         if: ${{ github.event.inputs.tag_ejecucion != '' }}
         run: |
-          mvn clean verify \
-            -Dcucumber.filter.tags="${{ github.event.inputs.tag_ejecucion }}" \
-            -Dwebdriver.driver=chrome \
-            -Dchrome.switches="--headless,--disable-gpu,--no-sandbox,--disable-dev-shm-usage,--window-size=1920,1080"
+          mvn clean verify -Dcucumber.filter.tags="${{ github.event.inputs.tag_ejecucion }}"
 
       - name: Upload Serenity Report
         if: always()
