@@ -31,28 +31,33 @@ jobs:
           java-version: '17'
           cache: 'maven'
 
-      - name: Install Chrome
+      - name: Install Chrome and ChromeDriver
         run: |
           sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
+          sudo apt-get install -y wget unzip xvfb
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo apt-get install -y ./google-chrome-stable_current_amd64.deb
+          google-chrome --version
 
       - name: Show inputs
         run: |
           echo "Ambiente: ${{ github.event.inputs.ambiente }}"
           echo "Tag de ejecución: ${{ github.event.inputs.tag_ejecucion }}"
 
-      # Ejecuta TODOS los escenarios si no se especifica tag
       - name: Run all scenarios
         if: ${{ github.event.inputs.tag_ejecucion == '' }}
         run: |
-          mvn clean verify -Dwebdriver.driver=chrome -Dchrome.switches="--headless,--disable-gpu,--window-size=1920,1080"
+          mvn clean verify \
+            -Dwebdriver.driver=chrome \
+            -Dchrome.switches="--headless,--disable-gpu,--no-sandbox,--disable-dev-shm-usage,--window-size=1920,1080"
 
-      # Ejecuta SOLO escenarios con tag si se especifica
       - name: Run scenarios with tag
         if: ${{ github.event.inputs.tag_ejecucion != '' }}
         run: |
-          mvn clean verify -Dcucumber.filter.tags="${{ github.event.inputs.tag_ejecucion }}" \
-            -Dwebdriver.driver=chrome -Dchrome.switches="--headless,--disable-gpu,--window-size=1920,1080"
+          mvn clean verify \
+            -Dcucumber.filter.tags="${{ github.event.inputs.tag_ejecucion }}" \
+            -Dwebdriver.driver=chrome \
+            -Dchrome.switches="--headless,--disable-gpu,--no-sandbox,--disable-dev-shm-usage,--window-size=1920,1080"
 
       - name: Upload Serenity Report
         if: always()
