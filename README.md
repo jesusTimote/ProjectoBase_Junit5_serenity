@@ -56,7 +56,7 @@ Framework de automatización funcional construido con:
 ### 🧪 4. Ejecutar pruebas (escenario específico)
 
 ```bash
-    mvn clean verify -Dcucumber.filter.tags="@tag"
+    mvn clean verify -Dcucumber.filter.tags="@login"
 ```
 ---
 
