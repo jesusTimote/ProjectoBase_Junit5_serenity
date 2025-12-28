@@ -2,19 +2,6 @@ name: Serenity Cucumber Tests
 
 on:
   workflow_dispatch:
-    inputs:
-      ambiente:
-        description: 'Ambiente de ejecución (dev o uat)'
-        required: true
-        default: 'dev'
-        type: choice
-        options:
-          - dev
-          - uat
-      tag_ejecucion:
-        description: 'Tag de Cucumber para filtrar escenarios (ej: @smoke). Si está vacío, se ejecutan todos.'
-        required: false
-        default: ''
 
 jobs:
   e2e:
@@ -31,31 +18,19 @@ jobs:
           java-version: '17'
           cache: 'maven'
 
-      - name: Install Chrome and ChromeDriver
+      - name: Install Chrome
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget unzip xvfb
-          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo apt-get install -y ./google-chrome-stable_current_amd64.deb
+          sudo apt-get install -y wget gnupg
+          wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+          sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
           google-chrome --version
 
-      - name: Show inputs
-        run: |
-          echo "Ambiente: ${{ github.event.inputs.ambiente }}"
-          echo "Tag de ejecución: ${{ github.event.inputs.tag_ejecucion }}"
-
-      - name: Run all scenarios
-        if: ${{ github.event.inputs.tag_ejecucion == '' }}
+      - name: Run Serenity Cucumber tests
         run: |
           mvn clean verify \
-            -Dwebdriver.driver=chrome \
-            -Dchrome.switches="--headless,--disable-gpu,--no-sandbox,--disable-dev-shm-usage,--window-size=1920,1080"
-
-      - name: Run scenarios with tag
-        if: ${{ github.event.inputs.tag_ejecucion != '' }}
-        run: |
-          mvn clean verify \
-            -Dcucumber.filter.tags="${{ github.event.inputs.tag_ejecucion }}" \
             -Dwebdriver.driver=chrome \
             -Dchrome.switches="--headless,--disable-gpu,--no-sandbox,--disable-dev-shm-usage,--window-size=1920,1080"
 
@@ -63,6 +38,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: serenity-report-${{ github.event.inputs.ambiente }}
+          name: serenity-report
           path: target/site/serenity
           if-no-files-found: error
