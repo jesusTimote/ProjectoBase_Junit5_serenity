@@ -1,0 +1,50 @@
+name: Serenity Cucumber Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      ambiente:
+        description: 'Ambiente de ejecución (dev o uat)'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - uat
+      tag_ejecucion:
+        description: 'Tag de Cucumber para filtrar escenarios (ej: @smoke)'
+        required: false
+        default: ''
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
+
+      - name: Show inputs
+        run: |
+          echo "Ambiente: ${{ github.event.inputs.ambiente }}"
+          echo "Tag de ejecución: ${{ github.event.inputs.tag_ejecucion }}"
+
+      - name: Run Serenity Cucumber tests
+        run: |
+          mvn clean verify \
+            -Dcucumber.filter.tags="${{ github.event.inputs.tag_ejecucion }}"
+
+      - name: Upload Serenity Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: serenity-report-${{ github.event.inputs.ambiente }}
+          path: target/site/serenity
+          if-no-files-found: error
